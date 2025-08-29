@@ -43,7 +43,6 @@ def bootstrap_browser(
 	# spit out a webDriver depending on the user's configured browser choice.
 	match configuration['browser']:
 		case 'chrome':
-			import chromedriver_autoinstaller  # Use chromedriver-autoinstaller
 			driver = webdriver.Chrome(options=options)
 		case 'chromium':
 			from webdriver_manager.core.os_manager import ChromeType
