@@ -19,7 +19,6 @@ from selenium.common.exceptions import (
     NoSuchWindowException,
     TimeoutException,
 )
-from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support import expected_conditions as EC
@@ -50,20 +49,8 @@ def bootstrap_browser(
 
     # spit out a webDriver depending on the user's configured browser choice.
     match configuration["browser"]:
-        case "chrome":
-            driver = webdriver.Chrome(options=options)
-        case "chromium":
-            from webdriver_manager.core.os_manager import ChromeType
-            from selenium.webdriver.chrome.service import Service as ChromiumService
-
-            driver = webdriver.Chrome(
-                service=ChromiumService(
-                    ChromeDriverManager(chrome_type=ChromeType.CHROMIUM).install()
-                ),
-                options=options,
-            )
         case _:
-            logger.error("Incorrect browser choice inputted.")
+            driver = webdriver.Chrome(options=options)
 
     # Get and initialize the most up-to-date Chromium web driver
     logger.debug(f"Starting {configuration['browser']} browser")
