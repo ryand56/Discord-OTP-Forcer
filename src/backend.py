@@ -252,7 +252,7 @@ def code_entry(
 			#Testing if the main app UI renders.
 			try:
 				# Wait 1 second, then check if the Discord App's HTML loaded by it's CSS class name. If loaded, then output it to the user.
-				loginTest = driver.find_element(by=By.CLASS_NAME, value='app_de4237') # Will need a better way to detect the presence of a class.
+				loginTest = driver.find_element(by=By.CLASS_NAME, value='app__160d8') # Will need a better way to detect the presence of a class.
 				driver.implicitly_wait(1)
 				logger.success(f'Code {totp_code} worked!')
 			except NoSuchElementException:
