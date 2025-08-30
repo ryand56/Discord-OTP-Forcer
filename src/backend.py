@@ -24,6 +24,10 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.wait import WebDriverWait
 
+from selenium.webdriver.chrome.service import Service
+
+CHROMIUM = "/run/current-system/sw/bin/chromium"
+CHROMEDRIVER = "/run/current-system/sw/bin/chromedriver"
 
 def bootstrap_browser(
     configuration: dict,
@@ -37,6 +41,8 @@ def bootstrap_browser(
     """
     # Set Chromium options.
     options = Options()
+    options.binary_location = CHROMIUM
+
     options.add_experimental_option("excludeSwitches", ["enable-logging"])
     options.add_experimental_option("detach", True)
     options.add_argument(
@@ -50,7 +56,8 @@ def bootstrap_browser(
     # spit out a webDriver depending on the user's configured browser choice.
     match configuration["browser"]:
         case _:
-            driver = webdriver.Chrome(options=options)
+            service = Service(executable_path=CHROMEDRIVER)
+            driver = webdriver.Chrome(service=service, options=options)
 
     # Get and initialize the most up-to-date Chromium web driver
     logger.debug(f"Starting {configuration['browser']} browser")
