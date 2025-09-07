@@ -29,6 +29,17 @@ from selenium.webdriver.chrome.service import Service
 CHROMIUM = "/run/current-system/sw/bin/chromium"
 CHROMEDRIVER = "/run/current-system/sw/bin/chromedriver"
 
+from pyvirtualdisplay import Display
+from ffmpeg.asyncio import FFmpeg
+
+display = Display(visible=False, size=(1280, 720))
+stream_url = "rtmp://127.0.0.1/live/discord"
+ffmpeg = (
+    FFmpeg()
+    .input(f":{display.display}", f="x11grab", video_size="1280x720", framerate=30)
+    .output(stream_url, f="flv", pix_fmt="yuv420p", preset="veryfast", vcodec="libx264")
+)
+
 def bootstrap_browser(
     configuration: dict,
 ) -> webdriver.chrome.webdriver.WebDriver:
@@ -39,6 +50,8 @@ def bootstrap_browser(
     :return: a WebDriver object of the Chrome browser.
     :rtype: webdriver.chrome.webdriver.WebDriver
     """
+    display.start()
+
     # Set Chromium options.
     options = Options()
     options.binary_location = CHROMIUM
@@ -50,7 +63,6 @@ def bootstrap_browser(
     )  # Force the browser window into English so we can find the code XPATH
 
     # If you want to run the program without the browser opening then remove the # from the options below
-    options.add_argument('--headless')
     options.add_argument('--log-level=1')
 
     # spit out a webDriver depending on the user's configured browser choice.
@@ -77,6 +89,8 @@ def bootstrap_browser(
     logger.debug("Blocking telemetry URLs")
     # Enable the network connectivity of the browser
     driver.execute_cdp_cmd("Network.enable", {})
+
+    ffmpeg.execute()
 
     # Go to the appropriate starting page for the mode
     landing_url = ""
@@ -338,6 +352,11 @@ def code_entry(
         print_session_statistics("invalid_session_ticket", session_statistics)
     except KeyboardInterrupt:
         session_statistics["elapsedTime"] = time.time() - start_time
+        print_session_statistics("closed_by_user", session_statistics)
+        raise UserCausedHalt
+    finally:
+        display.stop()
+        ffmpeg.terminate()
         print_session_statistics("closed_by_user", session_statistics)
         raise UserCausedHalt
 

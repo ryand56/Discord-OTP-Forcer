@@ -11,9 +11,15 @@ pkgs.mkShell {
         webdriver-manager
 
         ruff
+
+        pyvirtualdisplay
+        python-ffmpeg
       ];
     })
     chromedriver
     chromium
+
+    xorg.xvfb
+    ffmpeg
   ];
 }
