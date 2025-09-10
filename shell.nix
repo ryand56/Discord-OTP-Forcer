@@ -13,13 +13,12 @@ pkgs.mkShell {
         ruff
 
         pyvirtualdisplay
-        python-ffmpeg
       ];
     })
     chromedriver
     chromium
 
     xorg.xvfb
-    ffmpeg
+    ffmpeg-full
   ];
 }

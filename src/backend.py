@@ -29,16 +29,30 @@ from selenium.webdriver.chrome.service import Service
 CHROMIUM = "/run/current-system/sw/bin/chromium"
 CHROMEDRIVER = "/run/current-system/sw/bin/chromedriver"
 
+import subprocess
 from pyvirtualdisplay import Display
-from ffmpeg.asyncio import FFmpeg
 
 display = Display(visible=False, size=(1280, 720))
+
+# Input and output parameters
+display_number = display.display  # e.g., 0
+video_size = "1280x720"
+framerate = "30"
 stream_url = "rtmp://127.0.0.1/live/discord"
-ffmpeg = (
-    FFmpeg()
-    .input(f":{display.display}", f="x11grab", video_size="1280x720", framerate=30)
-    .output(stream_url, f="flv", pix_fmt="yuv420p", preset="veryfast", vcodec="libx264")
-)
+
+# Build FFmpeg command as a list
+cmd = [
+    "ffmpeg",
+    "-f", "x11grab",                 # input format
+    "-video_size", video_size,       # capture resolution
+    "-framerate", framerate,         # capture framerate
+    "-i", ":0",      # display to capture
+    "-f", "flv",                     # output format
+    "-pix_fmt", "yuv420p",           # pixel format
+    "-preset", "veryfast",           # encoding preset
+    "-vcodec", "libx264",            # codec
+    stream_url                        # output URL
+]
 
 def bootstrap_browser(
     configuration: dict,
@@ -90,7 +104,21 @@ def bootstrap_browser(
     # Enable the network connectivity of the browser
     driver.execute_cdp_cmd("Network.enable", {})
 
-    ffmpeg.execute()
+    # Launch FFmpeg in the background
+    process = subprocess.Popen(
+        cmd,
+        stdout=subprocess.PIPE,  # ignore stdout
+        stderr=subprocess.PIPE,  # ignore stderr
+    )
+
+    try:
+        stdout, stderr = process.communicate(timeout=10)  # wait up to 10s
+    except subprocess.TimeoutExpired:
+        print("FFmpeg timed out, killing process...")
+        process.kill()  # terminate FFmpeg
+        stdout, stderr = process.communicate()  # collect remaining output
+
+    print(stderr.decode("utf-8"))
 
     # Go to the appropriate starting page for the mode
     landing_url = ""
@@ -356,7 +384,6 @@ def code_entry(
         raise UserCausedHalt
     finally:
         display.stop()
-        ffmpeg.terminate()
         print_session_statistics("closed_by_user", session_statistics)
         raise UserCausedHalt
 
