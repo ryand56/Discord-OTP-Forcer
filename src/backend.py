@@ -29,31 +29,6 @@ from selenium.webdriver.chrome.service import Service
 CHROMIUM = "/run/current-system/sw/bin/chromium"
 CHROMEDRIVER = "/run/current-system/sw/bin/chromedriver"
 
-import subprocess
-from pyvirtualdisplay import Display
-
-display = Display(visible=False, size=(1280, 720))
-
-# Input and output parameters
-display_number = display.display  # e.g., 0
-video_size = "1280x720"
-framerate = "30"
-stream_url = "rtmp://127.0.0.1/live/discord"
-
-# Build FFmpeg command as a list
-cmd = [
-    "ffmpeg",
-    "-f", "x11grab",                 # input format
-    "-video_size", video_size,       # capture resolution
-    "-framerate", framerate,         # capture framerate
-    "-i", ":0",      # display to capture
-    "-f", "flv",                     # output format
-    "-pix_fmt", "yuv420p",           # pixel format
-    "-preset", "veryfast",           # encoding preset
-    "-vcodec", "libx264",            # codec
-    stream_url                        # output URL
-]
-
 def bootstrap_browser(
     configuration: dict,
 ) -> webdriver.chrome.webdriver.WebDriver:
@@ -64,7 +39,6 @@ def bootstrap_browser(
     :return: a WebDriver object of the Chrome browser.
     :rtype: webdriver.chrome.webdriver.WebDriver
     """
-    display.start()
 
     # Set Chromium options.
     options = Options()
@@ -103,22 +77,6 @@ def bootstrap_browser(
     logger.debug("Blocking telemetry URLs")
     # Enable the network connectivity of the browser
     driver.execute_cdp_cmd("Network.enable", {})
-
-    # Launch FFmpeg in the background
-    process = subprocess.Popen(
-        cmd,
-        stdout=subprocess.PIPE,  # ignore stdout
-        stderr=subprocess.PIPE,  # ignore stderr
-    )
-
-    try:
-        stdout, stderr = process.communicate(timeout=10)  # wait up to 10s
-    except subprocess.TimeoutExpired:
-        print("FFmpeg timed out, killing process...")
-        process.kill()  # terminate FFmpeg
-        stdout, stderr = process.communicate()  # collect remaining output
-
-    print(stderr.decode("utf-8"))
 
     # Go to the appropriate starting page for the mode
     landing_url = ""
@@ -383,7 +341,6 @@ def code_entry(
         print_session_statistics("closed_by_user", session_statistics)
         raise UserCausedHalt
     finally:
-        display.stop()
         print_session_statistics("closed_by_user", session_statistics)
         raise UserCausedHalt
 
